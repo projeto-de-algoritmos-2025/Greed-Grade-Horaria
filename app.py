@@ -1,35 +1,45 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
+from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Organizador de Grade", layout="centered")
 
-#TO-DO
+# TO-DO
+# - Apresentar relatório de execução do algoritmo
+# - Adicionar horarios e atividades mais desafiadoras para o algoritmo
+# - Atualizar README com instruções de uso, nova parte do plano de estudos e bibliotecas usadas
+# 
+
+# DONE
 # - Criar disciplinas que sejam de dois dias (seg e qua, por exemplo) - feito
 # - Melhorar visualização da tabela (cores, etc) - feito
-# - Apresentar relatório de execução do algoritmo
+# - Adicionar atividades para cada disciplina e montar plano de estudos (EDD) - feito
+# - Adicionar gráfico de Gantt para o plano de estudos - feito
+# - Remover o array de disciplinas do app.py e colocar em outro arquivo - feito
 
 
 
+# Extrai lista de disciplinas para o módulo externo `disciplinas.py`
+from disciplinas import disciplinas
 
-# --- Disciplinas com possibilidade de ocorrer em pares de dias ---
-disciplinas = [
-    {"nome": "Cálculo I", "inicio": 8, "fim": 10, "dias": ["Segunda", "Quarta"]},
-    {"nome": "Álgebra Linear", "inicio": 9, "fim": 11, "dias": ["Segunda"]},
-    {"nome": "Física I", "inicio": 10, "fim": 12, "dias": ["Segunda"]},
-    {"nome": "Arquitetura e Desenho", "inicio": 8, "fim": 10, "dias": ["Terça", "Quinta"]},
-    {"nome": "Lógica de Programação", "inicio": 9, "fim": 11, "dias": ["Terça"]},
-    {"nome": "Estruturas de Dados 1", "inicio": 10, "fim": 12, "dias": ["Terça"]},
-    {"nome": "Matemática Discreta 1", "inicio": 14, "fim": 16, "dias": ["Quarta"]},
-    {"nome": "Requisitos de Software", "inicio": 15, "fim": 17, "dias": ["Quarta"]},
-    {"nome": "Matemática Discreta 2", "inicio": 8, "fim": 10, "dias": ["Quinta"]},
-    {"nome": "Engenharia e Ambiente", "inicio": 10, "fim": 12, "dias": ["Quinta"]},
-    {"nome": "Banco de Dados 1", "inicio": 8, "fim": 10, "dias": ["Sexta"]},
-    {"nome": "Redes de Computadores", "inicio": 9, "fim": 11, "dias": ["Sexta"]},
-    # Exemplos adicionais com par Segunda-Sexta
-    {"nome": "Projeto de Algoritmos", "inicio": 13, "fim": 15, "dias": ["Segunda", "Sexta"]},
-    {"nome": "Estruturas de Dados 2", "inicio": 15, "fim": 16, "dias": ["Segunda", "Sexta"]},
-]
+def schedule_minimize_lateness(jobs):
+    """
+    jobs: lista de dicts com 'nome', 'p' (duração em horas), 'd' (deadline numérico)
+    Retorna: schedule (lista com start/finish/lateness) e L_max
+    """
+    jobs_sorted = sorted(jobs, key=lambda x: x['d'])
+    t = 0
+    schedule = []
+    L_max = 0
+    for job in jobs_sorted:
+        start = t
+        finish = start + job['p']
+        lateness = max(0, finish - job['d'])
+        schedule.append({'nome': job.get('nome', ''), 'p': job['p'], 'd': job['d'], 'start': start, 'finish': finish, 'lateness': lateness})
+        L_max = max(L_max, lateness)
+        t = finish
+    return schedule, L_max
 
 # --- Algoritmo ambicioso: Interval Scheduling ---
 def montar_grade(disciplinas):
@@ -123,7 +133,7 @@ for i, d in enumerate(disciplinas):
     col = cols[i % 2]
     dias_str = ", ".join(d.get('dias', d.get('dia', [])))
     label = f"{d['nome']} — {dias_str} ({d['inicio']}h - {d['fim']}h)"
-    if col.checkbox(label, key=f"{d['nome']}"):
+    if col.checkbox(label, key=f"{d['nome']}-{i}"):
         selecionadas.append(d)
 
 if st.button("Gerar Grade Otimizada"):
@@ -196,5 +206,58 @@ if st.button("Gerar Grade Otimizada"):
             # Botão para download CSV
             csv = df_tabela.to_csv(index=True)
             st.download_button(label="Baixar tabela como CSV", data=csv, file_name="tabela_horaria.csv", mime="text/csv")
+
+            # --- Plano de estudos (EDD) ---
+            # Coleta atividades das disciplinas escolhidas
+            atividades = []
+            dia_to_index = {"Segunda": 0, "Terça": 1, "Quarta": 2, "Quinta": 3, "Sexta": 4}
+            for d in grade:
+                for a in d.get('atividades', []):
+                    # converte deadline (dia,hora) para um número contínuo em horas
+                    day = a.get('deadline_day')
+                    hour = a.get('deadline_hour', 23)
+                    day_idx = dia_to_index.get(day, 4)
+                    # por simplicidade, definimos d = day_idx*24 + hour
+                    deadline_num = day_idx * 24 + int(hour)
+                    atividades.append({'nome': a.get('nome', d.get('nome')), 'p': int(a.get('duracao', 1)), 'd': deadline_num})
+
+            if atividades:
+                st.write('---')
+                st.subheader('📝 Plano de Estudos (ordem EDD para minimizar L_max)')
+
+                schedule, L_max = schedule_minimize_lateness(atividades)
+
+                # Mostra tabela das atividades agendadas (com labels legíveis)
+                df_sched = pd.DataFrame(schedule)
+                # converte start/finish numericos para dia/hora legível
+                def to_label(t):
+                    day = int(t) // 24
+                    hour = int(t) % 24
+                    inv = {v: k for k, v in dia_to_index.items()}
+                    return f"{inv.get(day,'?')} {hour}h"
+
+                df_sched['start_label'] = df_sched['start'].apply(to_label)
+                df_sched['finish_label'] = df_sched['finish'].apply(to_label)
+                # deadline legível
+                df_sched['d_label'] = df_sched['d'].apply(to_label)
+                st.table(df_sched[['nome', 'p', 'd_label', 'start_label', 'finish_label', 'lateness']])
+                st.write(f"**Máxima lateness (L_max):** {L_max} horas")
+
+                # Gantt simples com plotly (converte horas numericas para datetimes)
+                # usa a segunda-feira da semana atual como data base para que o eixo X mostre dias/horas
+                today = datetime.today()
+                monday = today - timedelta(days=today.weekday())
+                base_date = pd.Timestamp(monday.date())
+                df_fig = pd.DataFrame(schedule)
+                df_fig['Start_dt'] = pd.to_datetime(df_fig['start'], unit='h', origin=base_date)
+                df_fig['Finish_dt'] = pd.to_datetime(df_fig['finish'], unit='h', origin=base_date)
+                df_fig = df_fig.sort_values('Start_dt')
+                if not df_fig.empty:
+                    fig = px.timeline(df_fig, x_start='Start_dt', x_end='Finish_dt', y='nome', color='nome')
+                    fig.update_yaxes(autorange='reversed')
+                    # formata o eixo X para mostrar dia abreviado e hora
+                    fig.update_xaxes(tickformat='%a %H:%M')
+                    fig.update_layout(margin=dict(l=20, r=20, t=30, b=20), height=300)
+                    st.plotly_chart(fig, use_container_width=True)
         else:
             st.error("Nenhuma combinação possível sem conflito 😢")

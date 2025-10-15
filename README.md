@@ -13,26 +13,15 @@
 
 ## Sobre
 
-Este projeto tem como objetivo desenvolver uma aplicação interativa que aplica o problema de seleção de intervalos (interval scheduling), mas em um contexto real e intuitivo: montar a grade de disciplinas de um aluno sem sobreposição de horários. O algoritmo usado é o Interval Scheduling Ambicioso, que busca maximizar o número de atividades (aulas) sem sobreposição de horários.
-
-### 🔢 Passos do algoritmo
-
-- Ordena as disciplinas pelo horário de término (fim).
-
-- Começa escolhendo a primeira (a que termina mais cedo).
-
-- Para cada próxima disciplina:
-
-- Se o inicio for maior ou igual ao fim da última escolhida, inclui.
-
-- Caso contrário, descarta (há conflito).
+Este projeto tem como objetivo desenvolver uma aplicação interativa que aplica o problema de seleção de intervalos (Interval Scheduling), mas em um contexto real e intuitivo: montar a grade de disciplinas de um aluno sem sobreposição de horários. O algoritmo usado é o Interval Scheduling Ambicioso, que busca maximizar o número de atividades (aulas) sem sobreposição de horários.
+Além disso, foi usado o algoritmo de minimizar atraso máximo (Scheduling to Minimize Lateness) que organiza a prioridade de entrega de atividades. Algumas disciplinas incluem atividades (tarefas) com duração (horas) e um prazo (dia da semana + hora). Após montar a grade de aulas, o app monta um "plano de estudos" com essas atividades e utiliza o EDD para ordenar as tarefas de forma a minimizar o atraso máximo.
 
 
-### Exemplo grade gerada com o nosso algoritmo
+### Exemplo grade e planejamento gerados com o algoritmo
 
 ![Disciplinas](/assets/Materias.png)
-![Grade](/assets/GradeGerada.png)
-
+![Grade](/assets/Grade.png)
+![Disciplinas](/assets/PlanodeEstudos.png)
 
 ## Linguagem e Bibliotecas
 

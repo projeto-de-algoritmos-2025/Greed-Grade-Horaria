@@ -41,10 +41,17 @@ A apresentação do projeto pode ser acessada [aqui](https://www.youtube.com/wat
 
 ### Executando o projeto
 
-- Instale o Streamlit
+- Recomendamos criar um ambiente virtual para o projeto. Para isso, utilize os comandos abaixo:
 
 ```bash
- pip install streamlit
+python -m venv env
+source env/bin/activate  # No Windows use: env\Scripts\activate
+```
+
+- Em seguida, instale as dependências:
+
+```bash
+pip install -r requirements.txt
 ```
 
 - Após instalar as dependências,execute o comando:

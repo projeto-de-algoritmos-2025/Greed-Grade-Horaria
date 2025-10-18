@@ -30,7 +30,7 @@ Além disso, foi usado o algoritmo de minimizar atraso máximo (Scheduling to Mi
 
 ## Apresentação
 
-A apresentação do projeto pode ser acessada [aqui](https://www.youtube.com/watch?v=C614gKM6kvs).
+A apresentação do projeto pode ser acessada [aqui](https://www.youtube.com/watch?v=lM9NoJa0Y-k).
 
 ## Guia de Instalação
 
